@@ -1,9 +1,12 @@
 # cco.storage
 
-This is the Python 2 package for a combined triple and event store.
-The SQL files have moved to storage-common.
+This is the Python package for storing application data in a SQL database.
 
-Status: planning.
+Status: implementation started
 
-Project website: https://www.cyberconcepts.org.
+Project website: https://www.cyberconcepts.org
 
+License: MIT, see LICENSE file
+
+Remarks:
+- SQL files have been moved to storage-common
