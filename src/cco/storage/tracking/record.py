@@ -10,20 +10,26 @@ from sqlalchemy import MetaData, Table, Column, Index
 from sqlalchemy import BigInteger, DateTime, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import scoped_session, sessionmaker
+import transaction
 from zope.sqlalchemy import register, mark_changed
 
 from cybertools.util.date import getTimeStamp, timeStamp2ISO
+
+Session = None
 
 
 class Track(object):
     
     headFields = ['taskId', 'userName']
+    timeStamp = None
 
-    def __init__(self, *keys, data=None):
+    def __init__(self, *keys, data=None, timeStamp=None):
         self.head = {}
         for ix, k in enumerate(keys):
             self.head[self.headFields[ix]] = k
         self.data = data or {}
+        if timeStamp is not None:
+            self.timeStamp = timeStamp
 
 
 class Storage(object):
@@ -36,16 +42,22 @@ class Storage(object):
     conn = None
     table = None
 
-    def __init__(self, engine=None, conn=None):
+    def __init__(self, engine, sessionFactory=None, doCommit=False):
+        global Session
+        if Session is None:
+            if sessionFactory is None:
+                Session = scoped_session(sessionmaker(bind=engine, twophase=True))
+            else:
+                Session = sessionFactory
+            register(Session)
         self.engine = engine
-        if conn is None:
-            self.conn = engine.connect()
-        else:
-            self.conn = conn
+        self.doCommit = doCommit
+        self.session = Session()
+        self.conn = self.session.connection()
         self.metadata = MetaData()
         self.table = self.getTable()
 
-    def save(self, track):
+    def save(self, track, update=False, overwrite=False):
         values = {}
         t = self.table
         trackId = 0
@@ -56,7 +68,9 @@ class Storage(object):
         for v in self.conn.execute(stmt):
             trackId = v[0]
             break
-        self.conn.commit()
+        mark_changed(self.session)
+        if self.doCommit:
+            transaction.commit()
         return trackId
 
     def getTable(self):
