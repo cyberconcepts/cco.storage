@@ -16,11 +16,13 @@ Tracking Storage
   >>> storage = record.Storage(engine)
 
   >>> tr01 = record.Track('t01', 'john')
-  >>> tr01.keydata
+  >>> tr01.head
   {'taskId': 't01', 'userName': 'john'}
 
   >>> storage.getTable()
   Table(...)
+
+  >>> storage.save(tr01)
 
  Fin
  ===
