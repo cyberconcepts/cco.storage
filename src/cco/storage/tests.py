@@ -21,16 +21,17 @@ class Test(unittest.TestCase):
 
     def testBasicStuff(self):
         storage = record.Storage()
+
         tr01 = record.Track('t01', 'john')
-        self.assertEqual(tr01.head,{'taskId': 't01', 'userName': 'john'})
+        self.assertEqual(tr01.head, {'taskId': 't01', 'userName': 'john'})
 
         self.assertTrue(storage.getTable() is not None)
 
-        trackId = storage.save(tr01)
-        self.assertTrue(trackId > 0)
+        trid01 = storage.save(tr01)
+        self.assertTrue(trid01 > 0)
 
-        tr01a = storage.get(trackId)
-        print(tr01.head)
+        tr01a = storage.get(trid01)
+        self.assertEqual(tr01a.head, tr01.head)
 
         transaction.commit()
 
