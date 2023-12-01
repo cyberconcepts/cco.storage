@@ -4,17 +4,17 @@ SQL-based Storage for Records (Tracks) and Other Objects
 
 Test Prerequisite: PostgreSQL database ccotest (user ccotest with password cco).
 
-  >>> import transaction
-  >>> from cco.storage.common import getEngine
+  >>> from cco.storage.common import getEngine, sessionFactory
+  >>> from cco.storage.tracking import record
 
-  >>> engine = getEngine('postgresql+psycopg', 'ccotest', 'ccotest', 'cco')
+  >>> record.engine = getEngine('postgresql+psycopg', 'ccotest', 'ccotest', 'cco')
+  >>> record.Session = sessionFactory(record.engine)
 
 
 Tracking Storage
 ================
 
-  >>> from cco.storage.tracking import record
-  >>> storage = record.Storage(engine, doCommit=True)
+  >>> storage = record.Storage(doCommit=True)
 
   >>> tr01 = record.Track('t01', 'john')
   >>> tr01.head
@@ -26,6 +26,9 @@ Tracking Storage
   >>> trackId = storage.save(tr01)
   >>> trackId > 0
   True
+
+  >>> tr01a = storage.get(trackId)
+  >>> tr01a.head
 
  Fin
  ===
