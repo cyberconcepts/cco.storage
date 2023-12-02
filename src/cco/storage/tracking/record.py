@@ -6,6 +6,7 @@ A track consists of a head (index data, metadata)  with a fixed set of fields an
 data (payload) represented as a dict.
 """
 
+from datetime import datetime
 from sqlalchemy import MetaData, Table, Column, Index
 from sqlalchemy import BigInteger, DateTime, Text, func
 from sqlalchemy import select
@@ -55,8 +56,7 @@ class Storage(object):
     conn = None
     table = None
 
-    def __init__(self, doCommit=False):
-        self.doCommit = doCommit
+    def __init__(self):
         self.session = Session()
         self.conn = self.session.connection()
         self.metadata = MetaData()
@@ -64,26 +64,57 @@ class Storage(object):
 
     def get(self, trackId):
         t = self.table
-        hc = self.headCols
-        stmt = select(t.c[hc]).where(t.c.trackid == trackId)
+        stmt = select(t).where(t.c.trackid == trackId)
         for r in self.conn.execute(stmt):
-            return Track(*r[:len(hc)])
+            return Track(*r[1:-2], trackId=r[0],timeStamp=r[-2], data=r[-1])
 
-    def save(self, track, update=False, overwrite=False):
-        values = {}
+    def save(self, track, update=False, overwrite=False, newTimeStamp=True):
+        if not update:
+            return self.insert(track)
+        if track.trackId:
+            if self.update(track, newTimeStamp) > 0:
+                return track.trackId
+        found = self.queryLast(track)
+        if found is None:
+            return self.insert(track)
+        if overwrite:
+            found.data.update(track.data)
+        else:
+            found.data = track.data
+        self.update(found, newTimeStamp)
+        return found.trackId
+
+    def insert(self, track):
         t = self.table
         trackId = 0
-        for k, v in track.head.items():
-            values[k.lower()] = v
-        values['data'] = track.data
+        values = self.setupValues(track)
         stmt = t.insert().values(**values).returning(t.c.trackid)
         for v in self.conn.execute(stmt):
             trackId = v[0]
             break
         mark_changed(self.session)
-        if self.doCommit:
-            transaction.commit()
         return trackId
+
+    def update(self, track, newTimeStamp=True):
+        t = self.table
+        values = self.setupValues(track)
+        if newTimeStamp:  # CHECK: and track.timeStamp is None:
+            values['timestamp'] = datetime.now()
+        stmt = t.update().values(**values).where(t.c.trackid == track.trackId)
+        n = self.conn.execute(stmt).rowcount
+        if n > 0:
+            mark_changed(self.session)
+        return n
+
+    def setupValues(self, track):
+        values = {}
+        hf = self.trackFactory.headFields
+        for i, c in enumerate(self.headCols):
+            values[c] = track.head[hf[i]]
+        values['data'] = track.data
+        if track.timeStamp is not None:
+            values['timestamp'] = track.timeStamp
+        return values
 
     def getTable(self):
         if self.table is not None:
@@ -99,7 +130,7 @@ def createTable(engine, metadata, tableName, headcols, indexes=None):
     cols = [Column('trackid', BigInteger, primary_key=True)]
     idxs = []
     for ix, f in enumerate(headcols):
-        cols.append(Column(f.lower(), Text))
+        cols.append(Column(f.lower(), Text, nullable=False))
     cols.append(Column('timestamp', DateTime(timezone=True), server_default=func.now()))
     for ix, idef in enumerate(indexes):
         indexName = 'idx_%s_%d' % (tableName, (ix + 1))

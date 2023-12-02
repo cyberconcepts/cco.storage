@@ -23,6 +23,7 @@ class Test(unittest.TestCase):
         storage = record.Storage()
 
         tr01 = record.Track('t01', 'john')
+        tr01.update(dict(activity='testing'))
         self.assertEqual(tr01.head, {'taskId': 't01', 'userName': 'john'})
 
         self.assertTrue(storage.getTable() is not None)
@@ -32,12 +33,17 @@ class Test(unittest.TestCase):
 
         tr01a = storage.get(trid01)
         self.assertEqual(tr01a.head, tr01.head)
+        self.assertEqual(tr01a.trackId, trid01)
+        self.assertEqual(tr01a.data.get('activity'), 'testing')
+
+        tr01a.update(dict(text='Set up unit tests.'))
+        self.assertEqual(storage.update(tr01a), 1)
 
         transaction.commit()
 
 
 def test_suite():
-    flags = doctest.NORMALIZE_WHITESPACE | doctest.ELLIPSIS
+    #flags = doctest.NORMALIZE_WHITESPACE | doctest.ELLIPSIS
     return unittest.TestSuite((
         unittest.TestLoader().loadTestsFromTestCase(Test),
         #doctest.DocFileSuite('README.rst', optionflags=flags),
