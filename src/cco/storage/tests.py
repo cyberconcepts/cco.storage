@@ -39,6 +39,11 @@ class Test(unittest.TestCase):
         tr01a.update(dict(text='Set up unit tests.'))
         self.assertEqual(storage.update(tr01a), 1)
 
+        tr01b = storage.queryLast(taskId='t01')
+        self.assertEqual(tr01b.head, tr01.head)
+        self.assertEqual(tr01b.trackId, trid01)
+        self.assertEqual(tr01b.data.get('activity'), 'testing')
+
         transaction.commit()
 
 

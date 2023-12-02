@@ -31,6 +31,9 @@ class Track(object):
         self.head = {}
         for ix, k in enumerate(keys):
             self.head[self.headFields[ix]] = k
+        for k in self.headFields:
+            if self.head.get(k) is None:
+                self.heaad[k] = ''
         self.data = data or {}
         self.timeStamp = timeStamp
         self.trackId = trackId
@@ -68,11 +71,25 @@ class Storage(object):
         for r in self.conn.execute(stmt):
             return Track(*r[1:-2], trackId=r[0],timeStamp=r[-2], data=r[-1])
 
-    def save(self, track, update=False, overwrite=False, newTimeStamp=True):
+    def query(self, **crit):
+        t = self.table
+        where = [t.c[k.lower()] == v for k, v in crit.items()]
+        stmt = select(t).where(*where).order_by(t.c.timestamp)
+        for r in self.conn.execute(stmt):
+            yield Track(*r[1:-2], trackId=r[0],timeStamp=r[-2], data=r[-1])
+
+    def queryLast(self, **crit):
+        t = self.table
+        where = [t.c[k.lower()] == v for k, v in crit.items()]
+        stmt = select(t).where(*where).order_by(t.c.timestamp.desc()).limit(1)
+        for r in self.conn.execute(stmt):
+            return Track(*r[1:-2], trackId=r[0],timeStamp=r[-2], data=r[-1])
+
+    def save(self, track, update=False, overwrite=False, setNewTimeStamp=True):
         if not update:
             return self.insert(track)
         if track.trackId:
-            if self.update(track, newTimeStamp) > 0:
+            if self.update(track, setNewTimeStamp) > 0:
                 return track.trackId
         found = self.queryLast(track)
         if found is None:
@@ -81,7 +98,7 @@ class Storage(object):
             found.data.update(track.data)
         else:
             found.data = track.data
-        self.update(found, newTimeStamp)
+        self.update(found, setNewTimeStamp)
         return found.trackId
 
     def insert(self, track):
@@ -95,10 +112,10 @@ class Storage(object):
         mark_changed(self.session)
         return trackId
 
-    def update(self, track, newTimeStamp=True):
+    def update(self, track, setNewTimeStamp=True):
         t = self.table
         values = self.setupValues(track)
-        if newTimeStamp:  # CHECK: and track.timeStamp is None:
+        if setNewTimeStamp and track.timeStamp is None:
             values['timestamp'] = datetime.now()
         stmt = t.update().values(**values).where(t.c.trackid == track.trackId)
         n = self.conn.execute(stmt).rowcount
@@ -131,7 +148,8 @@ def createTable(engine, metadata, tableName, headcols, indexes=None):
     idxs = []
     for ix, f in enumerate(headcols):
         cols.append(Column(f.lower(), Text, nullable=False))
-    cols.append(Column('timestamp', DateTime(timezone=True), server_default=func.now()))
+    cols.append(Column('timestamp', DateTime(timezone=True), 
+                       nullable=False, server_default=func.now()))
     for ix, idef in enumerate(indexes):
         indexName = 'idx_%s_%d' % (tableName, (ix + 1))
         idxs.append(Index(indexName, *idef))
