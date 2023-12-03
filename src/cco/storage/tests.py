@@ -37,7 +37,8 @@ class Test(unittest.TestCase):
         self.assertEqual(tr01a.data.get('activity'), 'testing')
 
         tr01a.update(dict(text='Set up unit tests.'))
-        self.assertEqual(storage.update(tr01a), 1)
+        tr01a.timeStamp = None
+        self.assertTrue(storage.save(tr01a) > 0)
 
         tr01b = storage.queryLast(taskId='t01')
         self.assertEqual(tr01b.head, tr01.head)

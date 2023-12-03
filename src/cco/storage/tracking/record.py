@@ -27,7 +27,7 @@ class Track(object):
     
     headFields = ['taskId', 'userName']
 
-    def __init__(self, *keys, data=None, timeStamp=None, trackId=None):
+    def __init__(self, *keys, data=None, timeStamp=None, trackId=None, storage=None):
         self.head = {}
         for ix, k in enumerate(keys):
             self.head[self.headFields[ix]] = k
@@ -37,6 +37,7 @@ class Track(object):
         self.data = data or {}
         self.timeStamp = timeStamp
         self.trackId = trackId
+        self.storage = storage
 
     def update(self, data, overwrite=False):
         if data is None:
@@ -68,47 +69,37 @@ class Storage(object):
     def get(self, trackId):
         t = self.table
         stmt = select(t).where(t.c.trackid == trackId)
-        for r in self.conn.execute(stmt):
-            return Track(*r[1:-2], trackId=r[0],timeStamp=r[-2], data=r[-1])
+        return self.makeTrack(self.conn.execute(stmt).first())
 
     def query(self, **crit):
-        t = self.table
-        where = [t.c[k.lower()] == v for k, v in crit.items()]
-        stmt = select(t).where(*where).order_by(t.c.timestamp)
+        stmt = select(self.table).where(*self.setupWhere(crit)).order_by(t.c.trackId)
         for r in self.conn.execute(stmt):
-            yield Track(*r[1:-2], trackId=r[0],timeStamp=r[-2], data=r[-1])
+            yield self.makeTrack(r)
 
     def queryLast(self, **crit):
-        t = self.table
-        where = [t.c[k.lower()] == v for k, v in crit.items()]
-        stmt = select(t).where(*where).order_by(t.c.timestamp.desc()).limit(1)
-        for r in self.conn.execute(stmt):
-            return Track(*r[1:-2], trackId=r[0],timeStamp=r[-2], data=r[-1])
+        stmt = (select(self.table).where(*self.setupWhere(crit)).
+                order_by(self.table.c.timestamp.desc()).limit(1))
+        return self.makeTrack(self.conn.execute(stmt).first())
 
-    def save(self, track, update=False, overwrite=False, setNewTimeStamp=True):
+    def save(self, track, update=True, overwrite=False, setNewTimeStamp=True):
         if not update:
             return self.insert(track)
         if track.trackId:
             if self.update(track, setNewTimeStamp) > 0:
                 return track.trackId
-        found = self.queryLast(track)
+        crit = dict((hf, track.head[hf]) for hf in track.headFields)
+        found = self.queryLast(**crit)
         if found is None:
             return self.insert(track)
-        if overwrite:
-            found.data.update(track.data)
-        else:
-            found.data = track.data
+        found.update(track.data, overwrite)
         self.update(found, setNewTimeStamp)
         return found.trackId
 
     def insert(self, track):
         t = self.table
-        trackId = 0
         values = self.setupValues(track)
         stmt = t.insert().values(**values).returning(t.c.trackid)
-        for v in self.conn.execute(stmt):
-            trackId = v[0]
-            break
+        trackId = self.conn.execute(stmt).first()[0]
         mark_changed(self.session)
         return trackId
 
@@ -122,6 +113,14 @@ class Storage(object):
         if n > 0:
             mark_changed(self.session)
         return n
+
+    def makeTrack(self, r):
+        if r is None:
+            return None
+        return Track(*r[1:-2], trackId=r[0],timeStamp=r[-2], data=r[-1], storage=self)
+
+    def setupWhere(self, crit):
+        return [self.table.c[k.lower()] == v for k, v in crit.items()]
 
     def setupValues(self, track):
         values = {}
