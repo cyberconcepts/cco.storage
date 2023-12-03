@@ -42,7 +42,7 @@ class Test(unittest.TestCase):
 
         tr01b = storage.queryLast(taskId='t01')
         self.assertEqual(tr01b.head, tr01.head)
-        self.assertEqual(tr01b.trackId, trid01)
+        self.assertNotEqual(tr01b.trackId, trid01)
         self.assertEqual(tr01b.data.get('activity'), 'testing')
 
         transaction.commit()

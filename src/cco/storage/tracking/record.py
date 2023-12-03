@@ -61,6 +61,7 @@ class Storage(object):
     table = None
 
     def __init__(self):
+        self.recordChanges = True  # insert new track on change of data
         self.session = Session()
         self.conn = self.session.connection()
         self.metadata = MetaData()
@@ -78,21 +79,20 @@ class Storage(object):
 
     def queryLast(self, **crit):
         stmt = (select(self.table).where(*self.setupWhere(crit)).
-                order_by(self.table.c.timestamp.desc()).limit(1))
+                order_by(self.table.c.trackid.desc()).limit(1))
         return self.makeTrack(self.conn.execute(stmt).first())
 
-    def save(self, track, update=True, overwrite=False, setNewTimeStamp=True):
-        if not update:
-            return self.insert(track)
-        if track.trackId:
-            if self.update(track, setNewTimeStamp) > 0:
-                return track.trackId
+    def save(self, track):
         crit = dict((hf, track.head[hf]) for hf in track.headFields)
         found = self.queryLast(**crit)
         if found is None:
             return self.insert(track)
-        found.update(track.data, overwrite)
-        self.update(found, setNewTimeStamp)
+        if self.recordChanges and found.data != track.data:
+            return self.insert(track)
+        if found.data != track.data or found.timeStamp != track.timeStamp:
+            found.update(track.data)
+            found.timeStamp = track.timeStamp
+            self.update(found)
         return found.trackId
 
     def insert(self, track):
@@ -103,10 +103,10 @@ class Storage(object):
         mark_changed(self.session)
         return trackId
 
-    def update(self, track, setNewTimeStamp=True):
+    def update(self, track):
         t = self.table
         values = self.setupValues(track)
-        if setNewTimeStamp and track.timeStamp is None:
+        if track.timeStamp is None:
             values['timestamp'] = datetime.now()
         stmt = t.update().values(**values).where(t.c.trackid == track.trackId)
         n = self.conn.execute(stmt).rowcount
