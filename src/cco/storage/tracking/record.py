@@ -16,9 +16,6 @@ from zope.sqlalchemy import register, mark_changed
 
 from cybertools.util.date import getTimeStamp, timeStamp2ISO
 
-Session = None
-engine = None
-
 def defaultIndexes(cols):
     return [cols[i:] for i in range(len(cols))]
 
@@ -56,13 +53,13 @@ class Storage(object):
     #indexes = [('username',), ('taskid', 'username')]
     tableName = 'tracks'
 
-    session = None
-    conn = None
     table = None
 
-    def __init__(self):
-        self.recordChanges = True  # insert new track on change of data
-        self.session = Session()
+    def __init__(self, context, recordChanges=True):
+        self.context = context
+        self.recordChanges = recordChanges  # insert new track on change of data
+        self.session = context.Session()
+        self.engine = context.engine
         self.conn = self.session.connection()
         self.metadata = MetaData()
         self.table = self.getTable()
@@ -70,17 +67,17 @@ class Storage(object):
     def get(self, trackId):
         t = self.table
         stmt = select(t).where(t.c.trackid == trackId)
-        return self.makeTrack(self.conn.execute(stmt).first())
+        return self.makeTrack(self.session.execute(stmt).first())
 
     def query(self, **crit):
         stmt = select(self.table).where(*self.setupWhere(crit)).order_by(t.c.trackId)
-        for r in self.conn.execute(stmt):
+        for r in self.session.execute(stmt):
             yield self.makeTrack(r)
 
     def queryLast(self, **crit):
         stmt = (select(self.table).where(*self.setupWhere(crit)).
                 order_by(self.table.c.trackid.desc()).limit(1))
-        return self.makeTrack(self.conn.execute(stmt).first())
+        return self.makeTrack(self.session.execute(stmt).first())
 
     def save(self, track):
         crit = dict((hf, track.head[hf]) for hf in track.headFields)
@@ -99,7 +96,7 @@ class Storage(object):
         t = self.table
         values = self.setupValues(track)
         stmt = t.insert().values(**values).returning(t.c.trackid)
-        trackId = self.conn.execute(stmt).first()[0]
+        trackId = self.session.execute(stmt).first()[0]
         mark_changed(self.session)
         return trackId
 
@@ -109,7 +106,7 @@ class Storage(object):
         if track.timeStamp is None:
             values['timestamp'] = datetime.now()
         stmt = t.update().values(**values).where(t.c.trackid == track.trackId)
-        n = self.conn.execute(stmt).rowcount
+        n = self.session.execute(stmt).rowcount
         if n > 0:
             mark_changed(self.session)
         return n
@@ -138,7 +135,7 @@ class Storage(object):
         if self.tableName in self.metadata.tables:
             self.table = Table(self.tableName, self.metadata, autoload_with=self.engine)
             return self.table
-        return createTable(engine, self.metadata, self.tableName,
+        return createTable(self.engine, self.metadata, self.tableName,
                            self.headCols, self.indexes)
 
 

@@ -7,20 +7,19 @@ import transaction
 import unittest, doctest
 import warnings
 
-from cco.storage.common import getEngine, sessionFactory
+from cco.storage.common import Context, getEngine, sessionFactory
 from cco.storage.tracking import record
 
 warnings.filterwarnings('ignore', category=ResourceWarning)
 
-record.engine = getEngine('postgresql+psycopg', 'ccotest', 'ccotest', 'cco')
-record.Session = sessionFactory(record.engine)
+context = Context(getEngine('postgresql+psycopg', 'ccotest', 'ccotest', 'cco'))
 
 
 class Test(unittest.TestCase):
     "Basic tests for the cco.storage package."
 
     def testBasicStuff(self):
-        storage = record.Storage()
+        storage = record.Storage(context)
 
         tr01 = record.Track('t01', 'john')
         tr01.update(dict(activity='testing'))

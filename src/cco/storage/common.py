@@ -16,3 +16,12 @@ def sessionFactory(engine):
     Session = scoped_session(sessionmaker(bind=engine, twophase=True))
     register(Session)
     return Session
+
+
+class Context(object):
+
+    def __init__(self, engine, schema=None):
+        self.engine = engine
+        self.Session = sessionFactory(engine)
+        self.schema = schema
+
