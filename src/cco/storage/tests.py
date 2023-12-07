@@ -10,7 +10,7 @@ import warnings
 from cco.storage.common import Context, getEngine, sessionFactory
 from cco.storage.tracking import record
 
-warnings.filterwarnings('ignore', category=ResourceWarning)
+#warnings.filterwarnings('ignore', category=ResourceWarning)
 
 context = Context(getEngine('postgresql+psycopg', 'ccotest', 'ccotest', 'cco'))
 

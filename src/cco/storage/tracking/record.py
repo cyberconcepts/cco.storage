@@ -60,7 +60,6 @@ class Storage(object):
         self.recordChanges = recordChanges  # insert new track on change of data
         self.session = context.Session()
         self.engine = context.engine
-        self.conn = self.session.connection()
         self.metadata = MetaData()
         self.table = self.getTable()
 
@@ -143,14 +142,14 @@ def createTable(engine, metadata, tableName, headcols, indexes=None):
     cols = [Column('trackid', BigInteger, primary_key=True)]
     idxs = []
     for ix, f in enumerate(headcols):
-        cols.append(Column(f.lower(), Text, nullable=False))
+        cols.append(Column(f.lower(), Text, nullable=False, server_default=''))
     cols.append(Column('timestamp', DateTime(timezone=True), 
                        nullable=False, server_default=func.now()))
     for ix, idef in enumerate(indexes):
         indexName = 'idx_%s_%d' % (tableName, (ix + 1))
         idxs.append(Index(indexName, *idef))
     idxs.append(Index('idx_%s_ts' % tableName, 'timestamp'))
-    cols.append(Column('data', JSONB))
+    cols.append(Column('data', JSONB, nullable=False, server_default='{}'))
     table = Table(tableName, metadata, *(cols+idxs), extend_existing=True)
     metadata.create_all(engine)
     return table
