@@ -9,7 +9,7 @@ data (payload) represented as a dict.
 from datetime import datetime
 from sqlalchemy import MetaData, Table, Column, Index
 from sqlalchemy import BigInteger, DateTime, Text, func
-from sqlalchemy import select
+from sqlalchemy import select, and_
 from sqlalchemy.dialects.postgresql import JSONB
 import transaction
 from zope.sqlalchemy import register, mark_changed
@@ -24,17 +24,17 @@ class Track(object):
     
     headFields = ['taskId', 'userName']
 
-    def __init__(self, *keys, data=None, timeStamp=None, trackId=None, storage=None):
+    def __init__(self, *keys, **kw):
         self.head = {}
         for ix, k in enumerate(keys):
             self.head[self.headFields[ix]] = k
         for k in self.headFields:
             if self.head.get(k) is None:
                 self.heaad[k] = ''
-        self.data = data or {}
-        self.timeStamp = timeStamp
-        self.trackId = trackId
-        self.storage = storage
+        self.data = kw.get('data') or {}
+        self.timeStamp = kw.get('timeStamp')
+        self.trackId = kw.get('trackId')
+        self.storage = kw.get('storage')
 
     def update(self, data, overwrite=False):
         if data is None:
@@ -65,16 +65,17 @@ class Storage(object):
 
     def get(self, trackId):
         t = self.table
-        stmt = select(t).where(t.c.trackid == trackId)
+        stmt = select(t.c).where(t.c.trackid == trackId)
         return self.makeTrack(self.session.execute(stmt).first())
 
     def query(self, **crit):
-        stmt = select(self.table).where(*self.setupWhere(crit)).order_by(t.c.trackId)
+        stmt = select(self.table.c).where(
+                and_(*self.setupWhere(crit))).order_by(t.c.trackId)
         for r in self.session.execute(stmt):
             yield self.makeTrack(r)
 
     def queryLast(self, **crit):
-        stmt = (select(self.table).where(*self.setupWhere(crit)).
+        stmt = (select(self.table.c).where(and_(*self.setupWhere(crit))).
                 order_by(self.table.c.trackid.desc()).limit(1))
         return self.makeTrack(self.session.execute(stmt).first())
 
