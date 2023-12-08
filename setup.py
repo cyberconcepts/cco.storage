@@ -36,6 +36,8 @@ setup(name='cco.storage',
       install_requires=[
           'setuptools',
           'transaction',
+          'SQLAlchemy',
+          'zope.sqlalchemy',
           # -*- Extra requirements: -*-
       ],
       entry_points="""
