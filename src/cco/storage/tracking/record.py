@@ -60,8 +60,8 @@ class Storage(object):
         self.recordChanges = recordChanges  # insert new track on change of data
         self.session = context.Session()
         self.engine = context.engine
-        self.metadata = MetaData()
-        self.table = self.getTable()
+        self.metadata = MetaData(schema=context.schema)
+        self.table = self.getTable(context.schema)
 
     def get(self, trackId):
         t = self.table
@@ -129,14 +129,16 @@ class Storage(object):
             values['timestamp'] = track.timeStamp
         return values
 
-    def getTable(self):
+    def getTable(self, schema=None):
         if self.table is not None:
             return self.table
-        if self.tableName in self.metadata.tables:
-            self.table = Table(self.tableName, self.metadata, autoload_with=self.engine)
-            return self.table
-        return createTable(self.engine, self.metadata, self.tableName,
-                           self.headCols, self.indexes)
+        self.metadata.reflect(self.engine)
+        table = self.metadata.tables.get(
+                (schema and schema + '.' or '') + self.tableName)
+        if table is not None:
+            return table
+        return createTable(self.engine, self.metadata, self.tableName, self.headCols, 
+                           indexes=self.indexes)
 
 
 def createTable(engine, metadata, tableName, headcols, indexes=None):
