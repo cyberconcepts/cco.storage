@@ -12,7 +12,8 @@ from cco.storage.tracking import record
 
 #warnings.filterwarnings('ignore', category=ResourceWarning)
 
-context = Context(getEngine('postgresql+psycopg', 'ccotest', 'ccotest', 'cco'))
+context = Context(getEngine('postgresql+psycopg', 'ccotest', 'ccotest', 'cco'),
+                  schema='testing')
 
 
 class Test(unittest.TestCase):
