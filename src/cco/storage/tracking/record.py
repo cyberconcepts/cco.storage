@@ -60,7 +60,7 @@ class Storage(object):
         self.recordChanges = recordChanges  # insert new track on change of data
         self.session = context.Session()
         self.engine = context.engine
-        self.metadata = MetaData(context.schema)
+        self.metadata = MetaData(schema=context.schema)
         self.table = self.getTable(context.schema)
 
     def get(self, trackId):
