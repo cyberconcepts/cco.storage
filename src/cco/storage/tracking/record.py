@@ -91,9 +91,9 @@ class Storage(object):
             self.update(found)
         return found.trackId
 
-    def insert(self, track):
+    def insert(self, track, reuseTrackId=False):
         t = self.table
-        values = self.setupValues(track)
+        values = self.setupValues(track, reuseTrackId)
         stmt = t.insert().values(**values).returning(t.c.trackid)
         trackId = self.session.execute(stmt).first()[0]
         mark_changed(self.session)
@@ -110,6 +110,17 @@ class Storage(object):
             mark_changed(self.session)
         return n
 
+    def upsert(self, track):
+        """Try to update the record identified by the trackId given with ``track``. 
+        If not found insert new record without generating a new trackId.
+        Use this method for migration and other bulk insert/update tasks.
+        Don't forget to update the trackid sequence afterwards: 
+        ``select setval('<schema>.tracks_trackid_seq', <max>);``"""
+        if track.trackId is not None:
+            if self.update(track) > 0:
+                return track.trackId
+        return self.insert(track, reuseTrackId=True)
+
     def makeTrack(self, r):
         if r is None:
             return None
@@ -118,7 +129,7 @@ class Storage(object):
     def setupWhere(self, crit):
         return [self.table.c[k.lower()] == v for k, v in crit.items()]
 
-    def setupValues(self, track):
+    def setupValues(self, track, reuseTrackId=False):
         values = {}
         hf = self.trackFactory.headFields
         for i, c in enumerate(self.headCols):
@@ -126,6 +137,8 @@ class Storage(object):
         values['data'] = track.data
         if track.timeStamp is not None:
             values['timestamp'] = track.timeStamp
+        if reuseTrackId and track.trackId is not None:
+            values['trackid'] = track.trackId
         return values
 
     def getTable(self, schema=None):
