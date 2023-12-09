@@ -9,7 +9,7 @@ data (payload) represented as a dict.
 from datetime import datetime
 from sqlalchemy import MetaData, Table, Column, Index
 from sqlalchemy import BigInteger, DateTime, Text, func
-from sqlalchemy import select
+from sqlalchemy import and_
 from sqlalchemy.dialects.postgresql import JSONB
 import transaction
 from zope.sqlalchemy import register, mark_changed
@@ -74,7 +74,7 @@ class Storage(object):
             yield self.makeTrack(r)
 
     def queryLast(self, **crit):
-        stmt = (self.table.select().where(*self.setupWhere(crit)).
+        stmt = (self.table.select().where(and_(*self.setupWhere(crit))).
                 order_by(self.table.c.trackid.desc()).limit(1))
         return self.makeTrack(self.session.execute(stmt).first())
 
@@ -131,13 +131,15 @@ class Storage(object):
     def getTable(self, schema=None):
         if self.table is not None:
             return self.table
-        self.metadata.reflect(self.engine)
-        table = self.metadata.tables.get(
-                (schema and schema + '.' or '') + self.tableName)
-        if table is not None:
-            return table
+        #table = getExistingTable(self.engine, self.metadata, self.tableName)
+        #if table is None:
         return createTable(self.engine, self.metadata, self.tableName, self.headCols, 
                            indexes=self.indexes)
+
+
+def getExistingTable(engine, metadata, tableName):
+        metadata.reflect(engine)
+        return metadata.tables.get((schema and schema + '.' or '') + tableName)
 
 
 def createTable(engine, metadata, tableName, headcols, indexes=None):
