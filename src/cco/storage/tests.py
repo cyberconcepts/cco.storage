@@ -3,6 +3,7 @@
 """Tests for the 'cco.storage' package.
 """
 
+from datetime import datetime
 import transaction
 import unittest, doctest
 import warnings
@@ -44,6 +45,14 @@ class Test(unittest.TestCase):
         self.assertEqual(tr01b.head, tr01.head)
         self.assertNotEqual(tr01b.trackId, trid01)
         self.assertEqual(tr01b.data.get('activity'), 'testing')
+
+        tr02 = record.Track('t02', 'jim', trackId=31, timeStamp=datetime(2023, 11, 30),
+                            data=dict(activity='concept'))
+        trid02 = storage.upsert(tr02)
+        self.assertEqual(trid02, 31)
+        tr02.trackId = trid01
+        trid021 = storage.upsert(tr02)
+        self.assertEqual(trid021, trid01)
 
         transaction.commit()
 
