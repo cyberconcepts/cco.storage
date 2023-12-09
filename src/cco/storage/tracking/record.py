@@ -64,17 +64,17 @@ class Storage(object):
         self.table = self.getTable(context.schema)
 
     def get(self, trackId):
-        t = self.table
-        stmt = select(t).where(t.c.trackid == trackId)
+        stmt = self.table.select().where(self.table.c.trackid == trackId)
         return self.makeTrack(self.session.execute(stmt).first())
 
     def query(self, **crit):
-        stmt = select(self.table).where(*self.setupWhere(crit)).order_by(t.c.trackId)
+        stmt = self.table.select().where(
+                and_(*self.setupWhere(crit))).order_by(t.c.trackId)
         for r in self.session.execute(stmt):
             yield self.makeTrack(r)
 
     def queryLast(self, **crit):
-        stmt = (select(self.table).where(*self.setupWhere(crit)).
+        stmt = (self.table.select().where(*self.setupWhere(crit)).
                 order_by(self.table.c.trackid.desc()).limit(1))
         return self.makeTrack(self.session.execute(stmt).first())
 
