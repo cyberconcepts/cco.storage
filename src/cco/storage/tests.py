@@ -22,6 +22,7 @@ class Test(unittest.TestCase):
 
     def testBasicStuff(self):
         storage = record.Storage(context)
+        storage = context.create(record.Storage)
 
         tr01 = record.Track('t01', 'john')
         tr01.update(dict(activity='testing'))
@@ -50,9 +51,11 @@ class Test(unittest.TestCase):
                             data=dict(activity='concept'))
         trid02 = storage.upsert(tr02)
         self.assertEqual(trid02, 31)
+        self.assertEqual(tr02.uid, 'rec-31')
         tr02.trackId = trid01
         trid021 = storage.upsert(tr02)
         self.assertEqual(trid021, trid01)
+        self.assertEqual(tr02.uid, 'rec-' + str(trid01))
 
         transaction.commit()
 

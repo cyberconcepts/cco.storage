@@ -14,7 +14,8 @@ from sqlalchemy.dialects.postgresql import JSONB
 import transaction
 from zope.sqlalchemy import register, mark_changed
 
-from cybertools.util.date import getTimeStamp, timeStamp2ISO
+from cco.storage.common import registerStorage 
+
 
 def defaultIndexes(cols):
     return [cols[i:] for i in range(len(cols))]
@@ -23,6 +24,7 @@ def defaultIndexes(cols):
 class Track(object):
     
     headFields = ['taskId', 'userName']
+    prefix = 'rec'
 
     def __init__(self, *keys, data=None, timeStamp=None, trackId=None, storage=None):
         self.head = {}
@@ -44,20 +46,27 @@ class Track(object):
         else:
             self.data.update(data)
 
+    @property
+    def uid(self):
+        if self.trackId is None:
+            return None
+        return '%s-%d' % (self.prefix, self.trackId)
 
+
+@registerStorage
 class Storage(object):
 
-    trackFactory = Track
-    headCols = tuple(f.lower() for f in trackFactory.headFields)
+    itemFactory = Track
+    headCols = tuple(f.lower() for f in itemFactory.headFields)
     indexes = defaultIndexes(headCols)
     #indexes = [('username',), ('taskid', 'username')]
     tableName = 'tracks'
+    insertOnChange = True # always insert new track when data are changed
 
     table = None
 
-    def __init__(self, context, recordChanges=True):
+    def __init__(self, context):
         self.context = context
-        self.recordChanges = recordChanges  # insert new track on change of data
         self.session = context.Session()
         self.engine = context.engine
         self.metadata = MetaData(schema=context.schema)
@@ -83,7 +92,7 @@ class Storage(object):
         found = self.queryLast(**crit)
         if found is None:
             return self.insert(track)
-        if self.recordChanges and found.data != track.data:
+        if self.insertOnChange and found.data != track.data:
             return self.insert(track)
         if found.data != track.data or found.timeStamp != track.timeStamp:
             found.update(track.data)
@@ -124,14 +133,15 @@ class Storage(object):
     def makeTrack(self, r):
         if r is None:
             return None
-        return Track(*r[1:-2], trackId=r[0],timeStamp=r[-2], data=r[-1], storage=self)
+        return self.itemFactory(
+                *r[1:-2], trackId=r[0],timeStamp=r[-2], data=r[-1], storage=self)
 
     def setupWhere(self, crit):
         return [self.table.c[k.lower()] == v for k, v in crit.items()]
 
     def setupValues(self, track, reuseTrackId=False):
         values = {}
-        hf = self.trackFactory.headFields
+        hf = self.itemFactory.headFields
         for i, c in enumerate(self.headCols):
             values[c] = track.head[hf[i]]
         values['data'] = track.data

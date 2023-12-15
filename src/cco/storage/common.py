@@ -5,6 +5,7 @@
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
+import threading
 from zope.sqlalchemy import register
 
 
@@ -24,4 +25,30 @@ class Context(object):
         self.engine = engine
         self.Session = sessionFactory(engine)
         self.schema = schema
+        self.storages = {}
+
+    def create(self, cls):
+        storage = cls(self)
+        self.add(storage)
+        return storage
+
+    def add(self, storage):
+        self.storages[storage.itemFactory.prefix] = storage
+
+    def getItem(self, prefix, id):
+        storage = self.storages.get(prefix)
+        if storage is None:
+            factory = storageRegistry[prefix]
+            storage = factory(self)
+        return storage.get(id)
+
+
+# store information about storage implementations, identified by a uid prefix.
+
+storageRegistry = {}
+
+def registerStorage(cls):
+    # TODO: error on duplicate key
+    storageRegistry[cls.itemFactory.prefix] = cls
+    return cls
 
