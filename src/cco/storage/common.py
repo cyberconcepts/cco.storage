@@ -35,11 +35,12 @@ class Context(object):
     def add(self, storage):
         self.storages[storage.itemFactory.prefix] = storage
 
-    def getItem(self, prefix, id):
+    def getItem(self, uid):
+        prefix, id = uid.split('-')
+        id = int(id)
         storage = self.storages.get(prefix)
         if storage is None:
-            factory = storageRegistry[prefix]
-            storage = factory(self)
+            storage = self.create(storageRegistry[prefix])
         return storage.get(id)
 
 
