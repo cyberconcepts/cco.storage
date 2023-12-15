@@ -44,12 +44,12 @@ class Context(object):
         return storage.get(id)
 
 
-# store information about storage implementations, identified by a uid prefix.
+# store information about container implementations, identified by a uid prefix.
 
-storageRegistry = {}
+registry = {}
 
-def registerStorage(cls):
+def registerContainerClass(cls):
     # TODO: error on duplicate key
-    storageRegistry[cls.itemFactory.prefix] = cls
+    registry[cls.itemFactory.prefix] = cls
     return cls
 
