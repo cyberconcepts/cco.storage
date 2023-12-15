@@ -8,12 +8,12 @@ import transaction
 import unittest, doctest
 import warnings
 
-from cco.storage.common import Context, getEngine, sessionFactory
+from cco.storage.common import Storage, getEngine, sessionFactory
 from cco.storage.tracking import record
 
 #warnings.filterwarnings('ignore', category=ResourceWarning)
 
-context = Context(getEngine('postgresql+psycopg', 'ccotest', 'ccotest', 'cco'),
+storage = Storage(getEngine('postgresql+psycopg', 'ccotest', 'ccotest', 'cco'),
                   schema='testing')
 
 
@@ -21,7 +21,7 @@ class Test(unittest.TestCase):
     "Basic tests for the cco.storage package."
 
     def testBasicStuff(self):
-        tracks = context.create(record.Container)
+        tracks = storage.create(record.Container)
 
         tr01 = record.Track('t01', 'john')
         tr01.update(dict(activity='testing'))
@@ -56,7 +56,7 @@ class Test(unittest.TestCase):
         self.assertEqual(trid021, trid01)
         self.assertEqual(tr02.uid, 'rec-' + str(trid01))
 
-        tr03 = context.getItem('rec-31')
+        tr03 = storage.getItem('rec-31')
         self.assertEqual(tr03.trackId, 31)
 
         transaction.commit()

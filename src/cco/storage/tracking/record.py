@@ -65,12 +65,12 @@ class Container(object):
 
     table = None
 
-    def __init__(self, context):
-        self.context = context
-        self.session = context.Session()
-        self.engine = context.engine
-        self.metadata = MetaData(schema=context.schema)
-        self.table = self.getTable(context.schema)
+    def __init__(self, storage):
+        self.storage = storage
+        self.session = storage.Session()
+        self.engine = storage.engine
+        self.metadata = MetaData(schema=storage.schema)
+        self.table = self.getTable(storage.schema)
 
     def get(self, trackId):
         stmt = self.table.select().where(self.table.c.trackid == trackId)
