@@ -5,7 +5,8 @@
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
-from zope.sqlalchemy import register
+import threading
+import zope.sqlalchemy
 
 
 def getEngine(dbtype, dbname, user, pw, host='localhost', port=5432, **kw):
@@ -14,14 +15,41 @@ def getEngine(dbtype, dbname, user, pw, host='localhost', port=5432, **kw):
 
 def sessionFactory(engine):
     Session = scoped_session(sessionmaker(bind=engine, twophase=True))
-    register(Session)
+    zope.sqlalchemy.register(Session)
     return Session
 
 
-class Context(object):
+class Storage(object):
 
     def __init__(self, engine, schema=None):
         self.engine = engine
         self.Session = sessionFactory(engine)
         self.schema = schema
+        self.containers = {}
+
+    def create(self, cls):
+        container = cls(self)
+        self.add(container)
+        return container
+
+    def add(self, container):
+        self.containers[container.itemFactory.prefix] = container
+
+    def getItem(self, uid):
+        prefix, id = uid.split('-')
+        id = int(id)
+        container = self.containers.get(prefix)
+        if container is None:
+            container = self.create(registry[prefix])
+        return container.get(id)
+
+
+# store information about container implementations, identified by a uid prefix.
+
+registry = {}
+
+def registerContainerClass(cls):
+    # TODO: error on duplicate key
+    registry[cls.itemFactory.prefix] = cls
+    return cls
 
