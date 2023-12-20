@@ -78,7 +78,7 @@ class Container(object):
 
     def query(self, **crit):
         stmt = self.table.select().where(
-                and_(*self.setupWhere(crit))).order_by(t.c.trackId)
+                and_(*self.setupWhere(crit))).order_by(self.table.c.trackid)
         for r in self.session.execute(stmt):
             yield self.makeTrack(r)
 
@@ -100,9 +100,9 @@ class Container(object):
             self.update(found)
         return found.trackId
 
-    def insert(self, track, reuseTrackId=False):
+    def insert(self, track, withTrackId=False):
         t = self.table
-        values = self.setupValues(track, reuseTrackId)
+        values = self.setupValues(track, withTrackId)
         stmt = t.insert().values(**values).returning(t.c.trackid)
         trackId = self.session.execute(stmt).first()[0]
         mark_changed(self.session)
@@ -128,7 +128,7 @@ class Container(object):
         if track.trackId is not None:
             if self.update(track) > 0:
                 return track.trackId
-        return self.insert(track, reuseTrackId=True)
+        return self.insert(track, withTrackId=True)
 
     def makeTrack(self, r):
         if r is None:
@@ -139,7 +139,7 @@ class Container(object):
     def setupWhere(self, crit):
         return [self.table.c[k.lower()] == v for k, v in crit.items()]
 
-    def setupValues(self, track, reuseTrackId=False):
+    def setupValues(self, track, withTrackId=False):
         values = {}
         hf = self.itemFactory.headFields
         for i, c in enumerate(self.headCols):
@@ -147,7 +147,7 @@ class Container(object):
         values['data'] = track.data
         if track.timeStamp is not None:
             values['timestamp'] = track.timeStamp
-        if reuseTrackId and track.trackId is not None:
+        if withTrackId and track.trackId is not None:
             values['trackid'] = track.trackId
         return values
 
