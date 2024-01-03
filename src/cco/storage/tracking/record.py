@@ -130,6 +130,10 @@ class Container(object):
                 return track.trackId
         return self.insert(track, withTrackId=True)
 
+    def remove(self, trackId):
+        stmt = self.table.delete().where(self.table.c.trackid == trackId)
+        self.session.execute(stmt)
+
     def makeTrack(self, r):
         if r is None:
             return None
