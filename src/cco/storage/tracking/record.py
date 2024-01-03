@@ -132,7 +132,10 @@ class Container(object):
 
     def remove(self, trackId):
         stmt = self.table.delete().where(self.table.c.trackid == trackId)
-        self.session.execute(stmt)
+        n = self.session.execute(stmt).rowcount
+        if n > 0:
+            mark_changed(self.session)
+        return n
 
     def makeTrack(self, r):
         if r is None:
