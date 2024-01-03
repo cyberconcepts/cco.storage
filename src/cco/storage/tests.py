@@ -59,6 +59,9 @@ class Test(unittest.TestCase):
         tr03 = storage.getItem('rec-31')
         self.assertEqual(tr03.trackId, 31)
 
+        tracks.remove(31)
+        self.assertEqual(tracks.get(31), None)
+
         transaction.commit()
 
 
