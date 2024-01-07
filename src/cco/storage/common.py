@@ -51,5 +51,8 @@ registry = {}
 def registerContainerClass(cls):
     # TODO: error on duplicate key
     registry[cls.itemFactory.prefix] = cls
+    cls.headCols = cols = tuple(f.lower() for f in cls.itemFactory.headFields)
+    if cls.indexes is None:
+        cls.indexes = [cols[i:] for i in range(len(cols))]
     return cls
 

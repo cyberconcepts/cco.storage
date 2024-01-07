@@ -17,10 +17,6 @@ from zope.sqlalchemy import register, mark_changed
 from cco.storage.common import registerContainerClass
 
 
-def defaultIndexes(cols):
-    return [cols[i:] for i in range(len(cols))]
-
-
 class Track(object):
     
     headFields = ['taskId', 'userName']
@@ -57,11 +53,10 @@ class Track(object):
 class Container(object):
 
     itemFactory = Track
-    headCols = tuple(f.lower() for f in itemFactory.headFields)
-    indexes = defaultIndexes(headCols)
-    #indexes = [('username',), ('taskid', 'username')]
     tableName = 'tracks'
     insertOnChange = True # always insert new track when data are changed
+    indexes = None  # default, will be overwritten by registerContainerClass()
+    #indexes = [('username',), ('taskid', 'username')] # or put explicitly in class
 
     table = None
 
