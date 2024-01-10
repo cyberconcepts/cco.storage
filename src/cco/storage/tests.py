@@ -9,6 +9,7 @@ import unittest, doctest
 import warnings
 
 from cco.storage.common import Storage, getEngine, sessionFactory
+from cco.storage.proxy import core
 from cco.storage.tracking import record
 
 #warnings.filterwarnings('ignore', category=ResourceWarning)

@@ -1,28 +1,24 @@
-#
-#
-#
+# cco.storage.proxy.core
 
+"""Core classes and helper functions for creating proxy and adapter objects
+for storing attribute values in a SQL database.
 """
-Common base classes and helper functions for using
-cco.storage from loops (based on Zope3 / Bluebream)
-"""
+
 import transaction
-
-from loops import common
 
 _not_found = object()
 
 
 def loadData(obj):
-    print 'getData ***', obj.context.__name__, obj.context.__parent__.__name__
+    print ('getData ***', obj.context.__name__, obj.context.__parent__.__name__)
     return dict(dummy='dummy')
 
 
 def storeData(obj, data):
-    print 'storeData ***', obj.context.__name__, obj.context.__parent__.__name__, data
+    print ('storeData ***', obj.context.__name__, obj.context.__parent__.__name__, data)
 
 
-class AdapterBase(common.AdapterBase):
+class AdapterBase(object):
 
     _old_data = None
     _cont = None
