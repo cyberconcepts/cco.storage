@@ -1,4 +1,4 @@
-# cco.storage.proxy.core
+# cco.storage.proxy
 
 """Core classes and helper functions for creating proxy and adapter objects
 for storing attribute values in a SQL database.
