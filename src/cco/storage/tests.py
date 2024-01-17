@@ -9,8 +9,8 @@ import unittest, doctest
 import warnings
 
 from cco.storage.common import Storage, getEngine, sessionFactory
-from cco.storage.proxy import core
-from cco.storage.tracking import record
+from cco.storage import proxy
+from cco.storage import tracking
 
 #warnings.filterwarnings('ignore', category=ResourceWarning)
 
@@ -22,11 +22,13 @@ class Test(unittest.TestCase):
     "Basic tests for the cco.storage package."
 
     def testBasicStuff(self):
-        tracks = storage.create(record.Container)
+        tracks = storage.create(tracking.Container)
 
-        tr01 = record.Track('t01', 'john')
+        tr01 = tracking.Track('t01', 'john')
         tr01.update(dict(activity='testing'))
         self.assertEqual(tr01.head, {'taskId': 't01', 'userName': 'john'})
+        self.assertEqual(tr01.taskId, 't01')
+        self.assertEqual(tr01.userName, 'john')
 
         self.assertTrue(tracks.getTable() is not None)
 
@@ -47,7 +49,7 @@ class Test(unittest.TestCase):
         self.assertNotEqual(tr01b.trackId, trid01)
         self.assertEqual(tr01b.data.get('activity'), 'testing')
 
-        tr02 = record.Track('t02', 'jim', trackId=31, timeStamp=datetime(2023, 11, 30),
+        tr02 = tracking.Track('t02', 'jim', trackId=31, timeStamp=datetime(2023, 11, 30),
                             data=dict(activity='concept'))
         trid02 = tracks.upsert(tr02)
         self.assertEqual(trid02, 31)
