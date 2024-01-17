@@ -7,7 +7,7 @@ data (payload) represented as a dict.
 """
 
 from datetime import datetime
-from sqlalchemy import MetaData, Table, Column, Index
+from sqlalchemy import Table, Column, Index
 from sqlalchemy import BigInteger, DateTime, Text, func
 from sqlalchemy import and_
 from sqlalchemy.dialects.postgresql import JSONB
@@ -64,9 +64,7 @@ class Container(object):
     def __init__(self, storage):
         self.storage = storage
         self.session = storage.Session()
-        self.engine = storage.engine
-        self.metadata = MetaData(schema=storage.schema)
-        self.table = self.getTable(storage.schema)
+        self.table = self.getTable()
 
     def get(self, trackId):
         stmt = self.table.select().where(self.table.c.trackid == trackId)
@@ -154,21 +152,22 @@ class Container(object):
             values['trackid'] = track.trackId
         return values
 
-    def getTable(self, schema=None):
-        if self.table is not None:
-            return self.table
-        #table = getExistingTable(self.engine, self.metadata, self.tableName)
+    def getTable(self):
+        #table = getExistingTable(self.storage, self.tableName)
         #if table is None:
-        return createTable(self.engine, self.metadata, self.tableName, self.headCols, 
+        return createTable(self.storage, self.tableName, self.headCols, 
                            indexes=self.indexes)
 
 
-def getExistingTable(engine, metadata, tableName):
-        metadata.reflect(engine)
-        return metadata.tables.get((schema and schema + '.' or '') + tableName)
+def getExistingTable(storage, tableName):
+    metadata = storage.metadata
+    schema = storage.schema
+    metadata.reflect(storage.engine)
+    return metadata.tables.get((schema and schema + '.' or '') + tableName)
 
 
-def createTable(engine, metadata, tableName, headcols, indexes=None):
+def createTable(storage, tableName, headcols, indexes=None):
+    metadata = storage.metadata
     cols = [Column('trackid', BigInteger, primary_key=True)]
     idxs = []
     for ix, f in enumerate(headcols):
@@ -181,6 +180,6 @@ def createTable(engine, metadata, tableName, headcols, indexes=None):
     idxs.append(Index('idx_%s_ts' % tableName, 'timestamp'))
     cols.append(Column('data', JSONB, nullable=False, server_default='{}'))
     table = Table(tableName, metadata, *(cols+idxs), extend_existing=True)
-    metadata.create_all(engine)
+    metadata.create_all(storage.engine)
     return table
 

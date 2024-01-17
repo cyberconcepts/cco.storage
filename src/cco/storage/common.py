@@ -3,7 +3,7 @@
 """Common utility stuff for the cco.storage packages.
 """
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import scoped_session, sessionmaker
 import threading
 import zope.sqlalchemy
@@ -25,6 +25,7 @@ class Storage(object):
         self.engine = engine
         self.Session = sessionFactory(engine)
         self.schema = schema
+        self.metadata = MetaData(schema=self.schema)
         self.containers = {}
 
     def create(self, cls):
