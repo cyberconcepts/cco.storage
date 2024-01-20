@@ -3,7 +3,7 @@
 """Common utility stuff for the cco.storage packages.
 """
 
-from sqlalchemy import create_engine, MetaData
+from sqlalchemy import create_engine, MetaData, text
 from sqlalchemy.orm import scoped_session, sessionmaker
 import threading
 import zope.sqlalchemy
@@ -43,6 +43,24 @@ class Storage(object):
         if container is None:
             container = self.create(registry[prefix])
         return container.get(id)
+
+    def getExistingTable(self, tableName):
+        metadata = self.metadata
+        schema = self.schema
+        metadata.reflect(self.engine)
+        return metadata.tables.get((schema and schema + '.' or '') + tableName)
+
+    def dropTable(self, tableName):
+        table = self.getExistingTable(tableName)
+        if table is not None:
+            with self.engine.begin():
+                table.drop(self.engine)
+
+    def resetSequence(self, tableName, colName, v):
+        sq = ('alter sequence %s.%s_%s_seq restart %i' % 
+                (self.schema, tableName, colName, v))
+        with self.engine.begin() as conn:
+            conn.execute(text(sq))
 
 
 # store information about container implementations, identified by a uid prefix.

@@ -153,17 +153,10 @@ class Container(object):
         return values
 
     def getTable(self):
-        #table = getExistingTable(self.storage, self.tableName)
+        #table = self.storage.getExistingTable(self.tableName)
         #if table is None:
         return createTable(self.storage, self.tableName, self.headCols, 
                            indexes=self.indexes)
-
-
-def getExistingTable(storage, tableName):
-    metadata = storage.metadata
-    schema = storage.schema
-    metadata.reflect(storage.engine)
-    return metadata.tables.get((schema and schema + '.' or '') + tableName)
 
 
 def createTable(storage, tableName, headcols, indexes=None):

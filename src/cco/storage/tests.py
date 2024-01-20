@@ -22,6 +22,7 @@ class Test(unittest.TestCase):
     "Basic tests for the cco.storage package."
 
     def testBasicStuff(self):
+        storage.dropTable('tracks')
         tracks = storage.create(tracking.Container)
 
         tr01 = tracking.Track('t01', 'john')
