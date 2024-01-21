@@ -51,10 +51,8 @@ class Storage(object):
         return metadata.tables.get((schema and schema + '.' or '') + tableName)
 
     def dropTable(self, tableName):
-        table = self.getExistingTable(tableName)
-        if table is not None:
-            with self.engine.begin():
-                table.drop(self.engine)
+        with self.engine.begin() as conn:
+            conn.execute(text('drop table if exists %s.%s' % (self.schema, tableName)))
 
     def resetSequence(self, tableName, colName, v):
         sq = ('alter sequence %s.%s_%s_seq restart %i' % 

@@ -70,7 +70,7 @@ class Test(unittest.TestCase):
         transaction.commit()
 
 
-def test_suite():
+def suite():
     #flags = doctest.NORMALIZE_WHITESPACE | doctest.ELLIPSIS
     return unittest.TestSuite((
         unittest.TestLoader().loadTestsFromTestCase(Test),
@@ -78,4 +78,4 @@ def test_suite():
     ))
 
 if __name__ == '__main__':
-    unittest.main(defaultTest='test_suite')
+    unittest.main(defaultTest='suite')
