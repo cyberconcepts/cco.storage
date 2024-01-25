@@ -36,6 +36,7 @@ setup(name='cco.storage',
       install_requires=[
           'setuptools',
           'transaction',
+          'psycopg2-binary',
           'SQLAlchemy',
           'zope.sqlalchemy',
           # -*- Extra requirements: -*-
