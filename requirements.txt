@@ -1,5 +1,5 @@
 setuptools
-psycopg2-binary]
+psycopg2-binary
 SQLAlchemy
 transaction
 zope.sqlalchemy
