@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cco.storage"
+version = "3.0.1"
+description = "JSON-based storage for records (tracks) and other objects in SQL database"
+readme = "README.md"
+license = {text = "MIT"}
+keywords = ["cowsay"]
+authors = [{name = "Helmut Merz", email = "helmutm@cy55.de"}]
+
+dependencies = [
+	"transaction",
+	"psycopg[binary]",
+	"SQLAlchemy",
+	"zope.sqlalchemy",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
