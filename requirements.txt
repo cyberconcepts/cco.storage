@@ -1,0 +1,6 @@
+setuptools
+psycopg[binary]
+SQLAlchemy
+transaction
+zope.sqlalchemy
+

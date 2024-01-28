@@ -8,5 +8,3 @@ Project website: https://www.cyberconcepts.org
 
 License: MIT, see LICENSE file
 
-Remarks:
-- SQL files have been moved to storage-common
