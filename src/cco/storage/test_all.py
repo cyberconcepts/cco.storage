@@ -8,14 +8,18 @@ import transaction
 import unittest, doctest
 import warnings
 
+import cco.storage.common
 from cco.storage.common import Storage, getEngine, sessionFactory
 from cco.storage import proxy
 from cco.storage import tracking
 
 #warnings.filterwarnings('ignore', category=ResourceWarning)
 
-storage = Storage(getEngine('postgresql+psycopg', 'ccotest', 'ccotest', 'cco'),
-                  schema='testing')
+engine = getEngine('postgresql+psycopg', 'ccotest', 'ccotest', 'cco')
+cco.storage.common.engine = engine
+cco.storage.common.Session = sessionFactory(engine)
+
+storage = Storage(schema='testing')
 
 
 class Test(unittest.TestCase):

@@ -63,7 +63,7 @@ class Container(object):
 
     def __init__(self, storage):
         self.storage = storage
-        self.session = storage.Session()
+        self.session = storage.session
         self.table = self.getTable()
 
     def get(self, trackId):

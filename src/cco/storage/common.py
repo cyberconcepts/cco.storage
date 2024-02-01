@@ -21,11 +21,11 @@ def sessionFactory(engine):
 
 class Storage(object):
 
-    def __init__(self, engine, schema=None):
+    def __init__(self, schema=None):
         self.engine = engine
-        self.Session = sessionFactory(engine)
+        self.session = Session()
         self.schema = schema
-        self.metadata = MetaData(schema=self.schema)
+        self.metadata = MetaData(schema=schema)
         self.containers = {}
 
     def create(self, cls):
