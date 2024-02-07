@@ -18,6 +18,11 @@ def sessionFactory(engine):
     zope.sqlalchemy.register(Session)
     return Session
 
+# put something like this in code before first creating a Storage object
+#engine = getEngine('postgresql+psycopg', 'ccotest', 'ccotest', 'cco')
+#cco.storage.common.engine = engine
+#cco.storage.common.Session = sessionFactory(engine)
+
 
 class Storage(object):
 
